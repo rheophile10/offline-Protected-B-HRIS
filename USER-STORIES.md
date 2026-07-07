@@ -53,6 +53,14 @@ them through stages (Applied → … → Offer → Hired), and **convert** a hir
 officer — which creates the officer record and an active assignment, and bumps the
 headcount. All of it syncs and merges like the rest of the data.
 
+### US-8 — Review compliance and renew a certification
+**As** a training coordinator, **I want** to see which certifications are expired or
+expiring and renew them, **so that** officers stay qualified (e.g. firearms-current).
+
+*Acceptance:* the compliance dashboard shows Expired / Expiring-≤90-days / Valid
+counts and a firearms-current ratio; clicking a KPI filters the list; renewing an
+expired certification records a new dated entry and the expired count drops.
+
 ### US-6 — Lock the session
 **As** a planner, **I want** to lock the session when I step away, **so that** the
 decrypted data is wiped from memory.

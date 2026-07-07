@@ -112,6 +112,26 @@ test("US-7 recruit an applicant and hire them as an officer", async ({ page }) =
   await expect(page.getByRole("cell", { name: "Fabiola Meraz" })).toBeVisible();
 });
 
+test("US-8 review compliance and renew an expired certification", async ({ page }) => {
+  await openDemoDashboard(page);
+  await nav(page, "Compliance");
+  // the compliance dashboard surfaces expiring/expired counts
+  const expired = page.locator(".kpi-btn.bad .kpi-value");
+  await expect(expired).toHaveText("30");
+  await expect(page.getByText(/Firearms-current/)).toBeVisible();
+
+  // drill into expired certs, then renew the first one
+  await page.locator(".kpi-btn.bad").click();
+  await expect(page.locator(".tbl tbody tr").first()).toContainText("Expired");
+  await page.locator(".tbl tbody tr").first().getByRole("button", { name: "Renew" }).click();
+  await expect(page.locator(".modal")).toBeVisible();
+  await page.locator(".modal").getByRole("button", { name: "Save" }).click();
+  await expect(page.locator(".modal")).toHaveCount(0);
+
+  // one fewer expired certification after the renewal
+  await expect(expired).toHaveText("29");
+});
+
 test("US-6 lock the session to clear memory", async ({ page }) => {
   await openDemoDashboard(page);
   await page.getByRole("button", { name: /Lock session/ }).click();

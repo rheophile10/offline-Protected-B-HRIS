@@ -126,6 +126,11 @@ nav { display: flex; flex-direction: column; gap: 3px; flex: 1; }
 .pill.ok { color: var(--accent2); border-color: color-mix(in srgb, var(--accent2) 40%, var(--border)); }
 .pill.warn { color: var(--warn); }
 .pill.muted { color: var(--muted); }
+.pill.bad { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--border)); }
+td.bad, .num.bad { color: var(--danger); }
+.kpi-btn { cursor: pointer; text-align: left; font: inherit; border: 1px solid var(--border); }
+.kpi-btn:hover { border-color: var(--accent); }
+.kpi-btn.bad .kpi-value { color: var(--danger); }
 
 /* bars */
 .bars { display: flex; flex-direction: column; gap: 9px; }

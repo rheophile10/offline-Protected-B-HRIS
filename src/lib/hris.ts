@@ -330,6 +330,60 @@ export async function convertToOfficer(
   await setApplicationStage(row.id, "Hired");
 }
 
+// ---------- Training & compliance ----------
+export interface CertType {
+  code: string;
+  name: string;
+  category: string | null;
+  validity_months: number | null;
+}
+export interface CertRow {
+  id: string;
+  badge_number: number;
+  officer_name: string;
+  rank: string | null;
+  cert_code: string;
+  cert_name: string;
+  category: string | null;
+  validity_months: number | null;
+  issued_date: string | null;
+  expiry_date: string | null;
+  status: string;
+}
+export function certCatalog(): Promise<CertType[]> {
+  return all<CertType>("SELECT code,name,category,validity_months FROM certifications ORDER BY category, name");
+}
+export function listCertifications(): Promise<CertRow[]> {
+  return all<CertRow>(
+    "SELECT id,badge_number,officer_name,rank,cert_code,cert_name,category,validity_months,issued_date,expiry_date,status FROM v_certifications",
+  );
+}
+export async function recordCertification(
+  badge: number,
+  code: string,
+  issued: string | null,
+  expiry: string | null,
+): Promise<void> {
+  const user = requireUser();
+  const id = uuid();
+  await run(
+    `INSERT INTO officer_certifications(id,badge_number,cert_code,issued_date,expiry_date,status,created_by,updated_by,updated_at)
+     VALUES(?,?,?,?,?,'Active',?,?,?)`,
+    [id, badge, code, issued, expiry, user, user, now()],
+  );
+  await logChange("officer_certifications", id, "insert", null, null, code);
+}
+export async function revokeCertification(id: string): Promise<void> {
+  const user = requireUser();
+  await run("UPDATE officer_certifications SET status='Revoked', updated_by=?, updated_at=? WHERE id=?", [user, now(), id]);
+  await logChange("officer_certifications", id, "update", "status", null, "Revoked");
+}
+export async function deleteCertification(id: string): Promise<void> {
+  requireUser();
+  await run("DELETE FROM officer_certifications WHERE id=?", [id]);
+  await logChange("officer_certifications", id, "delete");
+}
+
 // ---------- Audit views ----------
 export interface ChangeEventRow {
   at: number;

@@ -28,6 +28,21 @@ INSERT OR IGNORE INTO detachments(name) VALUES
   ('Zona Centro Headquarters'),('Anapra District Station'),('Zaragoza District Station'),
   ('Senecú District Station'),('Riberas del Bravo Special Operations');
 
+-- certification catalogue (reference: the qualifications that can be held)
+CREATE TABLE IF NOT EXISTS certifications (
+  code             TEXT PRIMARY KEY NOT NULL,
+  name             TEXT NOT NULL DEFAULT '',
+  category         TEXT,
+  validity_months  INTEGER            -- recert interval; NULL = no expiry
+);
+INSERT OR IGNORE INTO certifications(code,name,category,validity_months) VALUES
+  ('FIREARM','Firearm Qualification','Use of Force',12),
+  ('USE_OF_FORCE','Use of Force Recertification','Use of Force',12),
+  ('CPR','CPR / First Aid','Medical',24),
+  ('DEESCALATION','Crisis Intervention & De-escalation','Community',24),
+  ('EVOC','Emergency Vehicle Operation','Driving',36),
+  ('NALOXONE','Naloxone Administration','Medical',24);
+
 -- ---- operator-editable tables (CRRs) ----
 -- positions: establishment. position_number is centrally governed → stable PK.
 CREATE TABLE IF NOT EXISTS positions (
@@ -135,6 +150,19 @@ CREATE TABLE IF NOT EXISTS applications (
   updated_at     INTEGER NOT NULL DEFAULT 0
 );
 
+-- ---- training & compliance: certifications held by officers (CRR) ----
+CREATE TABLE IF NOT EXISTS officer_certifications (
+  id           TEXT PRIMARY KEY NOT NULL,       -- UUID
+  badge_number INTEGER NOT NULL DEFAULT 0,
+  cert_code    TEXT NOT NULL DEFAULT '',
+  issued_date  TEXT,
+  expiry_date  TEXT,
+  status       TEXT NOT NULL DEFAULT 'Active',  -- Active | Revoked (expiry bucket derived)
+  created_by   TEXT NOT NULL DEFAULT '',
+  updated_by   TEXT NOT NULL DEFAULT '',
+  updated_at   INTEGER NOT NULL DEFAULT 0
+);
+
 -- ---- local/session metadata (NOT a CRR: excluded from changeset export) ----
 CREATE TABLE IF NOT EXISTS sync_meta (
   key   TEXT PRIMARY KEY NOT NULL,
@@ -151,6 +179,7 @@ SELECT crsql_as_crr('session_log');
 SELECT crsql_as_crr('competitions');
 SELECT crsql_as_crr('applicants');
 SELECT crsql_as_crr('applications');
+SELECT crsql_as_crr('officer_certifications');
 
 -- ---- reporting views (recompute from base tables after every merge) ----
 CREATE VIEW IF NOT EXISTS v_current_assignments AS
@@ -192,3 +221,12 @@ FROM applications ap
 JOIN applicants a    ON a.id = ap.applicant_id
 JOIN competitions c  ON c.id = ap.competition_id
 LEFT JOIN positions p ON p.position_number = c.position_number;
+
+-- certifications held, joined for the compliance view (expiry bucket derived in app)
+CREATE VIEW IF NOT EXISTS v_certifications AS
+SELECT oc.id, oc.badge_number, o.name AS officer_name, o.rank,
+       oc.cert_code, c.name AS cert_name, c.category, c.validity_months,
+       oc.issued_date, oc.expiry_date, oc.status
+FROM officer_certifications oc
+JOIN officers o      ON o.badge_number = oc.badge_number
+JOIN certifications c ON c.code = oc.cert_code;
