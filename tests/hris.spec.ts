@@ -84,6 +84,34 @@ test("US-5 export daily changes and merge them (no Node)", async ({ page }, test
   await expect(officersKpi(page)).toHaveText("28");
 });
 
+test("US-7 recruit an applicant and hire them as an officer", async ({ page }) => {
+  await openDemoDashboard(page);
+  await nav(page, "Recruitment");
+  await expect(page.locator(".kanban")).toBeVisible();
+  await expect(page.locator(".kcol.offer")).toContainText("Fabiola Meraz");
+
+  // add a new applicant to the pipeline
+  await page.getByRole("button", { name: /Add applicant/ }).click();
+  await expect(page.locator(".modal")).toBeVisible();
+  await page.locator(".modal input").nth(0).fill("Nuevo Aspirante");
+  await page.locator(".modal").getByRole("button", { name: /Add to pipeline/ }).click();
+  await expect(page.locator(".modal")).toHaveCount(0);
+  await expect(page.locator(".kcol.applied")).toContainText("Nuevo Aspirante");
+
+  // hire the applicant sitting at the Offer stage → creates an officer
+  await page.locator(".kcol.offer").getByRole("button", { name: /Hire/ }).first().click();
+  await expect(page.locator(".modal")).toBeVisible();
+  await page.locator(".modal input[type=number]").first().fill("9200");
+  await page.locator(".modal").getByRole("button", { name: /create officer/ }).click();
+  await expect(page.locator(".modal")).toHaveCount(0);
+
+  // the hire is now an officer on the roster and the headcount rose
+  await nav(page, "Dashboard");
+  await expect(officersKpi(page)).toHaveText("28");
+  await nav(page, "Officers");
+  await expect(page.getByRole("cell", { name: "Fabiola Meraz" })).toBeVisible();
+});
+
 test("US-6 lock the session to clear memory", async ({ page }) => {
   await openDemoDashboard(page);
   await page.getByRole("button", { name: /Lock session/ }).click();

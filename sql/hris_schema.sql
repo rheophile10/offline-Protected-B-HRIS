@@ -102,6 +102,39 @@ CREATE TABLE IF NOT EXISTS session_log (
   details TEXT
 );
 
+-- ---- recruitment / applicant tracking (CRRs) ----
+CREATE TABLE IF NOT EXISTS competitions (
+  id               TEXT PRIMARY KEY NOT NULL,   -- UUID
+  position_number  TEXT NOT NULL DEFAULT '',    -- links positions (app-layer)
+  opened           TEXT,
+  closes           TEXT,
+  status           TEXT NOT NULL DEFAULT 'Open', -- Open | Closed
+  created_by       TEXT NOT NULL DEFAULT '',
+  updated_by       TEXT NOT NULL DEFAULT '',
+  updated_at       INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS applicants (
+  id           TEXT PRIMARY KEY NOT NULL,        -- UUID
+  name         TEXT NOT NULL DEFAULT '',
+  email        TEXT,
+  phone        TEXT,
+  source       TEXT,
+  created_by   TEXT NOT NULL DEFAULT '',
+  updated_by   TEXT NOT NULL DEFAULT '',
+  updated_at   INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS applications (
+  id             TEXT PRIMARY KEY NOT NULL,      -- UUID
+  competition_id TEXT NOT NULL DEFAULT '',
+  applicant_id   TEXT NOT NULL DEFAULT '',
+  stage          TEXT NOT NULL DEFAULT 'Applied',-- Applied→Screening→Interview→Background→Offer→Hired/Rejected
+  applied_date   TEXT,
+  notes          TEXT,
+  created_by     TEXT NOT NULL DEFAULT '',
+  updated_by     TEXT NOT NULL DEFAULT '',
+  updated_at     INTEGER NOT NULL DEFAULT 0
+);
+
 -- ---- local/session metadata (NOT a CRR: excluded from changeset export) ----
 CREATE TABLE IF NOT EXISTS sync_meta (
   key   TEXT PRIMARY KEY NOT NULL,
@@ -115,6 +148,9 @@ SELECT crsql_as_crr('assignments');
 SELECT crsql_as_crr('app_user');
 SELECT crsql_as_crr('change_event');
 SELECT crsql_as_crr('session_log');
+SELECT crsql_as_crr('competitions');
+SELECT crsql_as_crr('applicants');
+SELECT crsql_as_crr('applications');
 
 -- ---- reporting views (recompute from base tables after every merge) ----
 CREATE VIEW IF NOT EXISTS v_current_assignments AS
@@ -145,3 +181,14 @@ SELECT r.rank, r.sort_order,
                  WHERE p2.rank_requirement = r.rank),0) AS filled
 FROM ranks r
 ORDER BY r.sort_order;
+
+-- recruitment pipeline: one row per application, joined for display
+CREATE VIEW IF NOT EXISTS v_pipeline AS
+SELECT ap.id, ap.stage, ap.applied_date, ap.notes,
+       a.id AS applicant_id, a.name AS applicant_name, a.email, a.source,
+       c.id AS competition_id, c.position_number, c.status AS competition_status,
+       p.title AS position_title
+FROM applications ap
+JOIN applicants a    ON a.id = ap.applicant_id
+JOIN competitions c  ON c.id = ap.competition_id
+LEFT JOIN positions p ON p.position_number = c.position_number;

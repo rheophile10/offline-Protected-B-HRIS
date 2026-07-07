@@ -7,16 +7,18 @@ import { Dashboard } from "./screens/Dashboard";
 import { Officers } from "./screens/Officers";
 import { Positions } from "./screens/Positions";
 import { Assignments } from "./screens/Assignments";
+import { Recruitment } from "./screens/Recruitment";
 import { SqlConsole } from "./screens/SqlConsole";
 import { Security } from "./screens/Security";
 
-type Screen = "dashboard" | "officers" | "positions" | "assignments" | "sql" | "security";
+type Screen = "dashboard" | "officers" | "positions" | "assignments" | "recruitment" | "sql" | "security";
 
 const NAV: { id: Screen; label: string; icon: string }[] = [
   { id: "dashboard", label: "Dashboard", icon: "◧" },
   { id: "officers", label: "Officers", icon: "◑" },
   { id: "positions", label: "Positions", icon: "▤" },
   { id: "assignments", label: "Assignments", icon: "⇄" },
+  { id: "recruitment", label: "Recruitment", icon: "⌸" },
   { id: "sql", label: "SQL Console", icon: "›_" },
   { id: "security", label: "Data & Security", icon: "🔒" },
 ];
@@ -89,6 +91,7 @@ function Shell() {
         {screen === "officers" && <Officers />}
         {screen === "positions" && <Positions />}
         {screen === "assignments" && <Assignments />}
+        {screen === "recruitment" && <Recruitment />}
         {screen === "sql" && <SqlConsole />}
         {screen === "security" && <Security onLock={lock} userName={userName} />}
       </main>

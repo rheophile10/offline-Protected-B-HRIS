@@ -43,6 +43,16 @@ truth **inside the app**, **so that** no one needs Node, admin rights, or a serv
 fresh truth and loading that file on the Data & Security screen applies it and
 the headcount reflects the merged edit. Divergent edits converge (CRDT).
 
+### US-7 — Recruit an applicant and hire them
+**As** a recruiter, **I want** to run a hiring pipeline and turn a successful
+applicant into an officer, **so that** recruitment and the roster stay in one
+system.
+
+*Acceptance:* I can open a competition on a vacant position, add applicants, move
+them through stages (Applied → … → Offer → Hired), and **convert** a hire into an
+officer — which creates the officer record and an active assignment, and bumps the
+headcount. All of it syncs and merges like the rest of the data.
+
 ### US-6 — Lock the session
 **As** a planner, **I want** to lock the session when I step away, **so that** the
 decrypted data is wiped from memory.

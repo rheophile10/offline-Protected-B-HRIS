@@ -212,6 +212,124 @@ export function rankHeadcount(): Promise<{ rank: string; budgeted: number; fille
   return all("SELECT rank, budgeted, filled FROM v_rank_headcount");
 }
 
+// ---------- Recruitment / applicant tracking ----------
+export const PIPELINE_STAGES = ["Applied", "Screening", "Interview", "Background", "Offer", "Hired", "Rejected"];
+
+export interface Competition {
+  id: string;
+  position_number: string;
+  opened: string | null;
+  closes: string | null;
+  status: string;
+  position_title: string | null;
+  applicant_count: number;
+}
+export interface PipelineRow {
+  id: string;
+  stage: string;
+  applied_date: string | null;
+  notes: string | null;
+  applicant_id: string;
+  applicant_name: string;
+  email: string | null;
+  source: string | null;
+  competition_id: string;
+  position_number: string;
+  position_title: string | null;
+}
+
+export function listCompetitions(): Promise<Competition[]> {
+  return all<Competition>(
+    `SELECT c.id, c.position_number, c.opened, c.closes, c.status,
+            p.title AS position_title,
+            (SELECT COUNT(*) FROM applications a WHERE a.competition_id = c.id) AS applicant_count
+     FROM competitions c
+     LEFT JOIN positions p ON p.position_number = c.position_number
+     ORDER BY c.status='Open' DESC, c.opened DESC`,
+  );
+}
+export async function createCompetition(positionNumber: string, opened: string, closes: string): Promise<void> {
+  const user = requireUser();
+  const id = uuid();
+  await run(
+    `INSERT INTO competitions(id,position_number,opened,closes,status,created_by,updated_by,updated_at)
+     VALUES(?,?,?,?,'Open',?,?,?)`,
+    [id, positionNumber, opened || null, closes || null, user, user, now()],
+  );
+  await logChange("competitions", id, "insert", null, null, positionNumber);
+}
+export async function setCompetitionStatus(id: string, status: string): Promise<void> {
+  const user = requireUser();
+  await run("UPDATE competitions SET status=?, updated_by=?, updated_at=? WHERE id=?", [status, user, now(), id]);
+  await logChange("competitions", id, "update", "status", null, status);
+}
+
+export function listPipeline(): Promise<PipelineRow[]> {
+  return all<PipelineRow>(
+    "SELECT id,stage,applied_date,notes,applicant_id,applicant_name,email,source,competition_id,position_number,position_title FROM v_pipeline ORDER BY applied_date DESC, applicant_name",
+  );
+}
+
+export interface NewApplicant {
+  name: string;
+  email: string | null;
+  phone: string | null;
+  source: string | null;
+  competition_id: string;
+}
+export async function addApplicant(a: NewApplicant): Promise<void> {
+  const user = requireUser();
+  const applicantId = uuid();
+  await run(
+    `INSERT INTO applicants(id,name,email,phone,source,created_by,updated_by,updated_at) VALUES(?,?,?,?,?,?,?,?)`,
+    [applicantId, a.name, a.email, a.phone, a.source, user, user, now()],
+  );
+  const appId = uuid();
+  await run(
+    `INSERT INTO applications(id,competition_id,applicant_id,stage,applied_date,notes,created_by,updated_by,updated_at)
+     VALUES(?,?,?,'Applied',?,?,?,?,?)`,
+    [appId, a.competition_id, applicantId, new Date().toISOString().slice(0, 10), null, user, user, now()],
+  );
+  await logChange("applications", appId, "insert", null, null, a.name);
+}
+export async function setApplicationStage(id: string, stage: string): Promise<void> {
+  const user = requireUser();
+  await run("UPDATE applications SET stage=?, updated_by=?, updated_at=? WHERE id=?", [stage, user, now(), id]);
+  await logChange("applications", id, "update", "stage", null, stage);
+}
+export async function deleteApplication(id: string): Promise<void> {
+  requireUser();
+  await run("DELETE FROM applications WHERE id=?", [id]);
+  await logChange("applications", id, "delete");
+}
+
+/** Convert a hired applicant into an officer + an active assignment to the posting. */
+export async function convertToOfficer(
+  row: PipelineRow,
+  badge: number,
+  rank: string | null,
+  salary: number | null,
+  startDate: string,
+): Promise<void> {
+  const user = requireUser();
+  await run(
+    `INSERT INTO officers(badge_number,name,rank,start_date,current_salary,status,created_by,updated_by,updated_at)
+     VALUES(?,?,?,?,?,'Active',?,?,?)`,
+    [badge, row.applicant_name, rank, startDate, salary, user, user, now()],
+  );
+  await logChange("officers", badge, "insert", null, null, row.applicant_name);
+  if (row.position_number) {
+    const aid = uuid();
+    await run(
+      `INSERT INTO assignments(id,badge_number,position_number,start_date,end_date,status,created_by,updated_by,updated_at)
+       VALUES(?,?,?,?,NULL,'Active',?,?,?)`,
+      [aid, badge, row.position_number, startDate, user, user, now()],
+    );
+    await logChange("assignments", aid, "insert", null, null, row.position_number);
+  }
+  await setApplicationStage(row.id, "Hired");
+}
+
 // ---------- Audit views ----------
 export interface ChangeEventRow {
   at: number;
