@@ -12,17 +12,16 @@
   --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --radius: 12px;
 }
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #eef1f5;
-    --panel: #ffffff;
-    --panel2: #f3f5f8;
-    --border: #dde2ea;
-    --text: #1a1d24;
-    --muted: #5b6472;
-    --accent: #2563eb;
-    --accent2: #059669;
-  }
+/* Default is dark (:root above). Light applies only when explicitly selected. */
+:root[data-theme="light"] {
+  --bg: #eef1f5;
+  --panel: #ffffff;
+  --panel2: #f3f5f8;
+  --border: #dde2ea;
+  --text: #1a1d24;
+  --muted: #5b6472;
+  --accent: #2563eb;
+  --accent2: #059669;
 }
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
@@ -181,6 +180,13 @@ td.bad, .num.bad { color: var(--danger); }
 .user-pick { justify-content: flex-start; gap: 12px; padding: 12px; }
 .user-avatar { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; }
 .who { font-size: 12px; color: var(--muted); text-align: center; padding-bottom: 4px; }
+
+/* theme toggle */
+.theme-toggle { font: inherit; font-size: 12px; padding: 7px 11px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--panel2); color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.theme-toggle:hover { border-color: var(--accent); }
+.theme-toggle.full { width: 100%; justify-content: center; }
+.theme-toggle.fixed { position: fixed; top: 14px; right: 16px; z-index: 200; }
 
 /* recruitment */
 .recruit-screen { max-width: none; }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AppProvider, useApp } from "./ui";
+import { AppProvider, useApp, ThemeToggle } from "./ui";
 import { boot, exportChanges, lockSession } from "./lib/session";
 import { SessionGate } from "./screens/SessionGate";
 import { UserGate } from "./screens/UserGate";
@@ -97,6 +97,7 @@ function Shell() {
           <div className="who">Operator: <strong>{userName}</strong></div>
           <button className="btn good full" onClick={saveChanges}>⭱ Export my changes</button>
           <button className="btn full" onClick={lock}>🔒 Lock session</button>
+          <ThemeToggle variant="full" />
           <div className="lockmsg">Unsaved changes are lost on lock — export first.</div>
         </div>
       </aside>

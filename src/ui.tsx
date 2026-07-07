@@ -1,5 +1,25 @@
 // Shared UI primitives + app context (notifications, data-refresh signal).
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import { getTheme, setTheme, type Theme } from "./lib/theme";
+
+export function ThemeToggle({ variant }: { variant?: "full" | "fixed" }) {
+  const [theme, setThemeState] = useState<Theme>(getTheme());
+  const toggle = () => {
+    const next: Theme = theme === "dark" ? "light" : "dark";
+    setTheme(next);
+    setThemeState(next);
+  };
+  return (
+    <button
+      className={"theme-toggle" + (variant ? " " + variant : "")}
+      onClick={toggle}
+      title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+      aria-label="Toggle light or dark theme"
+    >
+      {theme === "dark" ? "☀ Light" : "☾ Dark"}
+    </button>
+  );
+}
 
 export interface AppCtx {
   version: number;

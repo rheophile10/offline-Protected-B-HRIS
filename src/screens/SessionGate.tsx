@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useApp, Field } from "../ui";
+import { useApp, Field, ThemeToggle } from "../ui";
 import { readFileBytes, readFileText, download } from "../lib/files";
 import { startFromEncrypted, startFromSchema, startWithDemo, SCHEMA_SQL } from "../lib/session";
 
@@ -40,6 +40,7 @@ export function SessionGate({ onLoaded }: { onLoaded: () => void }) {
 
   return (
     <div className="gate">
+      <ThemeToggle variant="fixed" />
       <div className="gate-card">
         <div className="gate-head">
           <span className="logo big">⬡</span>

@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { useApp } from "../ui";
+import { useApp, ThemeToggle, useLiveQuery } from "../ui";
 import { listActiveUsers, setCurrentUser, type AppUser } from "../lib/identity";
 import { logSession } from "../lib/audit";
-import { useLiveQuery } from "../ui";
 
 /**
  * Operator identity gate (app-development-requirements §4). Not authentication —
@@ -28,6 +27,7 @@ export function UserGate({ onSelected }: { onSelected: (name: string) => void })
 
   return (
     <div className="gate">
+      <ThemeToggle variant="fixed" />
       <div className="gate-card">
         <div className="gate-head">
           <span className="logo big">⬡</span>
