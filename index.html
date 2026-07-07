@@ -118,8 +118,9 @@
       <li><strong>Morning</strong> — a coordinator hands out one encrypted <code>truth.hrisdump</code> and the day's passphrase.</li>
       <li><strong>Work offline</strong> — each planner opens the truth, picks their identity, and edits with no network.</li>
       <li><strong>Export changes</strong> — at day's end each exports an encrypted <code>.hrischanges</code> delta.</li>
-      <li><strong>Merge</strong> — the coordinator runs a small Node tool that merges everyone's deltas into a new truth.
-        cr-sqlite (a CRDT) converges divergent edits deterministically, so nobody's work is lost.</li>
+      <li><strong>Merge — right in the app.</strong> A coordinator opens the truth, loads everyone's change files, and
+        merges them <em>in the browser</em> — no install, no admin rights, no Node. cr-sqlite (a CRDT) converges
+        divergent edits deterministically, so nobody's work is lost. The product is just the one <code>index.html</code>.</li>
     </ol>
   </div>
 
