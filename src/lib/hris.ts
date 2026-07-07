@@ -384,7 +384,78 @@ export async function deleteCertification(id: string): Promise<void> {
   await logChange("officer_certifications", id, "delete");
 }
 
+// ---------- Leave / absence ----------
+export const LEAVE_STATUSES = ["Requested", "Approved", "Denied", "Cancelled"];
+export interface LeaveType {
+  code: string;
+  name: string;
+  paid: number;
+}
+export interface LeaveRow {
+  id: string;
+  badge_number: number;
+  officer_name: string;
+  rank: string | null;
+  leave_code: string;
+  leave_name: string;
+  paid: number;
+  start_date: string | null;
+  end_date: string | null;
+  days: number;
+  status: string;
+  notes: string | null;
+}
+export function leaveTypes(): Promise<LeaveType[]> {
+  return all<LeaveType>("SELECT code,name,paid FROM leave_types ORDER BY name");
+}
+export function listLeave(): Promise<LeaveRow[]> {
+  return all<LeaveRow>(
+    "SELECT id,badge_number,officer_name,rank,leave_code,leave_name,paid,start_date,end_date,days,status,notes FROM v_leave ORDER BY start_date DESC",
+  );
+}
+export async function requestLeave(
+  badge: number,
+  code: string,
+  start: string,
+  end: string,
+  days: number,
+  status = "Requested",
+): Promise<void> {
+  const user = requireUser();
+  const id = uuid();
+  await run(
+    `INSERT INTO leave_records(id,badge_number,leave_code,start_date,end_date,days,status,notes,created_by,updated_by,updated_at)
+     VALUES(?,?,?,?,?,?,?,NULL,?,?,?)`,
+    [id, badge, code, start, end, days, status, user, user, now()],
+  );
+  await logChange("leave_records", id, "insert", null, null, code);
+}
+export async function setLeaveStatus(id: string, status: string): Promise<void> {
+  const user = requireUser();
+  await run("UPDATE leave_records SET status=?, updated_by=?, updated_at=? WHERE id=?", [status, user, now(), id]);
+  await logChange("leave_records", id, "update", "status", null, status);
+}
+export async function deleteLeave(id: string): Promise<void> {
+  requireUser();
+  await run("DELETE FROM leave_records WHERE id=?", [id]);
+  await logChange("leave_records", id, "delete");
+}
+
 // ---------- Audit views ----------
+export interface SessionLogRow {
+  at: number;
+  user_id: string;
+  event: string;
+  day_id: string | null;
+  details: string | null;
+}
+export function listSessionLog(limit = 100): Promise<SessionLogRow[]> {
+  return all<SessionLogRow>(
+    "SELECT at,user_id,event,day_id,details FROM session_log ORDER BY at DESC LIMIT ?",
+    [limit],
+  );
+}
+
 export interface ChangeEventRow {
   at: number;
   user_id: string;

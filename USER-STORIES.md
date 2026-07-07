@@ -61,6 +61,28 @@ expiring and renew them, **so that** officers stay qualified (e.g. firearms-curr
 counts and a firearms-current ratio; clicking a KPI filters the list; renewing an
 expired certification records a new dated entry and the expired count drops.
 
+### US-9 — Request and approve leave
+**As** a supervisor, **I want** to log leave requests and approve them, **so that**
+absences and current availability are tracked.
+
+*Acceptance:* the leave screen shows on-leave-today, pending, and upcoming counts;
+approving a pending request updates its status and the pending count drops.
+
+### US-10 — Project workforce retirement exposure
+**As** a workforce planner, **I want** to see projected vacancies over the coming
+years, **so that** I can plan hiring ahead of retirements.
+
+*Acceptance:* a projection table shows retirement-eligible officers and the
+projected deficit at +1/+2/+3/+5-year horizons (from length of service), plus a
+list of officers nearing the pension milestone.
+
+### US-11 — Audit who changed what
+**As** a coordinator, **I want** to see attributed changes and session/export
+events, **so that** end-of-day accountability is clear.
+
+*Acceptance:* the audit screen lists change events (operator, entity, action) and
+session events (open/lock/export). A change I make appears attributed to me.
+
 ### US-6 — Lock the session
 **As** a planner, **I want** to lock the session when I step away, **so that** the
 decrypted data is wiped from memory.

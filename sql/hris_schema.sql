@@ -43,6 +43,16 @@ INSERT OR IGNORE INTO certifications(code,name,category,validity_months) VALUES
   ('EVOC','Emergency Vehicle Operation','Driving',36),
   ('NALOXONE','Naloxone Administration','Medical',24);
 
+-- leave/absence types (reference)
+CREATE TABLE IF NOT EXISTS leave_types (
+  code TEXT PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL DEFAULT '',
+  paid INTEGER NOT NULL DEFAULT 1
+);
+INSERT OR IGNORE INTO leave_types(code,name,paid) VALUES
+  ('VACATION','Vacation',1),('SICK','Sick',1),('PARENTAL','Parental',1),
+  ('BEREAVEMENT','Bereavement',1),('INJURY','WSIB / Injury-on-duty',1),('UNPAID','Unpaid',0);
+
 -- ---- operator-editable tables (CRRs) ----
 -- positions: establishment. position_number is centrally governed → stable PK.
 CREATE TABLE IF NOT EXISTS positions (
@@ -163,6 +173,21 @@ CREATE TABLE IF NOT EXISTS officer_certifications (
   updated_at   INTEGER NOT NULL DEFAULT 0
 );
 
+-- ---- leave / absence (CRR) ----
+CREATE TABLE IF NOT EXISTS leave_records (
+  id           TEXT PRIMARY KEY NOT NULL,        -- UUID
+  badge_number INTEGER NOT NULL DEFAULT 0,
+  leave_code   TEXT NOT NULL DEFAULT '',
+  start_date   TEXT,
+  end_date     TEXT,
+  days         REAL NOT NULL DEFAULT 0,
+  status       TEXT NOT NULL DEFAULT 'Requested', -- Requested | Approved | Denied | Cancelled
+  notes        TEXT,
+  created_by   TEXT NOT NULL DEFAULT '',
+  updated_by   TEXT NOT NULL DEFAULT '',
+  updated_at   INTEGER NOT NULL DEFAULT 0
+);
+
 -- ---- local/session metadata (NOT a CRR: excluded from changeset export) ----
 CREATE TABLE IF NOT EXISTS sync_meta (
   key   TEXT PRIMARY KEY NOT NULL,
@@ -180,6 +205,7 @@ SELECT crsql_as_crr('competitions');
 SELECT crsql_as_crr('applicants');
 SELECT crsql_as_crr('applications');
 SELECT crsql_as_crr('officer_certifications');
+SELECT crsql_as_crr('leave_records');
 
 -- ---- reporting views (recompute from base tables after every merge) ----
 CREATE VIEW IF NOT EXISTS v_current_assignments AS
@@ -230,3 +256,12 @@ SELECT oc.id, oc.badge_number, o.name AS officer_name, o.rank,
 FROM officer_certifications oc
 JOIN officers o      ON o.badge_number = oc.badge_number
 JOIN certifications c ON c.code = oc.cert_code;
+
+-- leave records joined for display
+CREATE VIEW IF NOT EXISTS v_leave AS
+SELECT l.id, l.badge_number, o.name AS officer_name, o.rank,
+       l.leave_code, t.name AS leave_name, t.paid,
+       l.start_date, l.end_date, l.days, l.status, l.notes
+FROM leave_records l
+JOIN officers o     ON o.badge_number = l.badge_number
+JOIN leave_types t  ON t.code = l.leave_code;

@@ -132,6 +132,41 @@ test("US-8 review compliance and renew an expired certification", async ({ page 
   await expect(expired).toHaveText("29");
 });
 
+test("US-9 request and approve leave", async ({ page }) => {
+  await openDemoDashboard(page);
+  await nav(page, "Leave");
+  const pending = page.locator(".kpi.warn .kpi-value"); // pending-requests card
+  await expect(pending).toHaveText("3");
+  await expect(page.getByText("Currently on leave")).toBeVisible();
+  // approve the first pending request → pending count drops
+  await page.getByRole("button", { name: "Approve" }).first().click();
+  await expect(pending).toHaveText("2");
+});
+
+test("US-10 project workforce retirement exposure", async ({ page }) => {
+  await openDemoDashboard(page);
+  await nav(page, "Planning");
+  await expect(page.getByText("Projected vacancy deficit by horizon")).toBeVisible();
+  await expect(page.getByRole("cell", { name: "+5 years" })).toBeVisible();
+  await expect(page.getByText("Officers nearing pension eligibility")).toBeVisible();
+  await expect(page.locator(".tbl").nth(1).locator("tbody tr").first()).toBeVisible();
+});
+
+test("US-11 audit shows attributed changes and session events", async ({ page }) => {
+  await openDemoDashboard(page);
+  // create an attributed change
+  await nav(page, "Officers");
+  await page.getByRole("button", { name: /Add officer/ }).click();
+  await page.locator(".modal input").nth(0).fill("9300");
+  await page.locator(".modal input").nth(1).fill("Audit Trail");
+  await page.locator(".modal").getByRole("button", { name: "Save" }).click();
+  await expect(page.locator(".modal")).toHaveCount(0);
+  // the audit screen attributes it and lists session events
+  await nav(page, "Audit");
+  await expect(page.locator(".card").first()).toContainText("Audit Trail");
+  await expect(page.getByText("session_open")).toBeVisible();
+});
+
 test("US-6 lock the session to clear memory", async ({ page }) => {
   await openDemoDashboard(page);
   await page.getByRole("button", { name: /Lock session/ }).click();
