@@ -5,3 +5,5 @@ src/lib/sqlWasm.ts
 .DS_Store
 *.tsbuildinfo
 docs/
+test-results/
+playwright-report/
