@@ -29,6 +29,7 @@
   .btn { display:inline-flex; align-items:center; gap:8px; padding:12px 20px; border-radius:10px;
     text-decoration:none; font-weight:600; font-size:15px; border:1px solid var(--border); color:var(--text); background:var(--panel); }
   .btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn.download { background:var(--accent2); border-color:var(--accent2); color:#04231a; }
   .btn:hover { border-color:var(--accent); }
   .banner { border:1px solid var(--border); border-left-width:4px; border-radius:10px; padding:14px 16px; margin:14px 0; background:var(--panel); }
   .banner.poc { border-left-color:var(--amber); }
@@ -65,7 +66,12 @@
     </div>
     <div class="cta">
       <a class="btn primary" href="app.html">▶ Try the live demo</a>
-      <a class="btn" href="https://github.com/rheophile10/offline-Protected-B-HRIS">View source on GitHub</a>
+      <a class="btn download" href="app.html" download="offline-hris.html">⭳ Download index.html</a>
+      <a class="btn" href="how-to.html">📖 How to use</a>
+      <a class="btn" href="https://github.com/rheophile10/offline-Protected-B-HRIS">Source</a>
+    </div>
+    <div class="tag" style="font-size:13px;margin-top:8px">
+      The download <em>is</em> the product — one self-contained file. Save it, open it offline, done.
     </div>
   </header>
 
@@ -126,9 +132,10 @@
 
   <h2>Run it offline</h2>
   <div class="card">
-    <p>Open the <a href="app.html">demo</a>, then use your browser's <em>Save Page As…</em> to keep a local copy — or
-    clone the repo and run <code>npm run build</code> to produce your own <code>dist/index.html</code>. Double-click the
-    saved file; it works with no server and no connection.</p>
+    <p>Hit <a href="app.html" download="offline-hris.html"><strong>Download index.html</strong></a> above to save the one
+    file, then double-click it — it works with no server and no connection. (Or clone the repo and run
+    <code>npm run build</code> to produce your own <code>dist/index.html</code>.) New to it? See the
+    <a href="how-to.html">how-to guide</a>, with short screen recordings of every task.</p>
   </div>
 
   <footer>

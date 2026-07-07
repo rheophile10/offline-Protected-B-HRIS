@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How to use — Offline HRIS</title>
+<style>
+  :root {
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --border:#2a2f3a;
+    --text:#e6e9ef; --muted:#93a0b4; --accent:#4f8cff; --accent2:#34d399;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#eef1f5; --panel:#fff; --panel2:#f3f5f8; --border:#dde2ea;
+      --text:#1a1d24; --muted:#5b6472; --accent:#2563eb; --accent2:#059669; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.6; }
+  .wrap { max-width:820px; margin:0 auto; padding:28px 20px 64px; }
+  a { color:var(--accent); }
+  .top { display:flex; gap:14px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+  .top a { text-decoration:none; font-size:14px; }
+  h1 { font-size:28px; margin:12px 0 4px; }
+  .lede { color:var(--muted); }
+  .btn { display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:10px;
+    text-decoration:none; font-weight:600; font-size:14px; border:1px solid var(--border); color:var(--text); background:var(--panel); }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn.download { background:var(--accent2); border-color:var(--accent2); color:#04231a; }
+  .cta { display:flex; gap:10px; flex-wrap:wrap; margin:16px 0 10px; }
+  .note { border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:10px; padding:12px 15px; background:var(--panel); margin:14px 0; font-size:14px; }
+  .story { background:var(--panel); border:1px solid var(--border); border-radius:14px; padding:18px 20px; margin:20px 0; }
+  .story h2 { font-size:19px; margin:0 0 2px; }
+  .story .role { color:var(--muted); font-size:13px; margin:0 0 10px; }
+  video { width:100%; border-radius:10px; border:1px solid var(--border); background:#000; display:block; margin:10px 0; }
+  ol { margin:6px 0; padding-left:20px; } li { margin:4px 0; }
+  code { font-family:var(--mono); font-size:.9em; background:var(--panel2); padding:1px 6px; border-radius:5px; }
+  .tag { display:inline-block; font-size:11px; font-family:var(--mono); color:var(--muted); border:1px solid var(--border); border-radius:999px; padding:2px 9px; margin-left:8px; }
+  footer { margin-top:36px; padding-top:18px; border-top:1px solid var(--border); color:var(--muted); font-size:13px; text-align:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <a href="index.html">← Overview</a>
+    <a href="app.html">Live demo</a>
+    <a href="https://github.com/rheophile10/offline-Protected-B-HRIS">Source</a>
+  </div>
+  <h1>How to use the Offline HRIS</h1>
+  <p class="lede">Short screen recordings of every task. Each clip is an automated
+    <a href="https://github.com/rheophile10/offline-Protected-B-HRIS/blob/main/tests/hris.spec.ts">Playwright test</a>
+    running against the real built app — so the guide can never drift from the product.</p>
+
+  <div class="cta">
+    <a class="btn primary" href="app.html">▶ Open the live demo</a>
+    <a class="btn download" href="app.html" download="offline-hris.html">⭳ Download index.html</a>
+  </div>
+
+  <div class="note">
+    <strong>It's one file.</strong> Download <code>index.html</code>, double-click it, and everything below works
+    offline — no server, no install, no admin rights. The demo passphrase can be anything you like; it encrypts
+    whatever you export in that session.
+  </div>
+
+  <div class="story">
+    <h2>1 · Start a session <span class="tag">US-1</span></h2>
+    <p class="role">As a planner, open the app and load today's data behind a passphrase.</p>
+    <video src="videos/us1-start-session.webm" controls muted playsinline preload="metadata"></video>
+    <ol>
+      <li>Open the file — you land on a locked gate.</li>
+      <li>Keep <em>Demo data</em>, type any passphrase, and choose <strong>Start session</strong>.</li>
+      <li>Pick your operator identity. You arrive at the dashboard: 27 officers and the biggest staffing gaps.</li>
+    </ol>
+  </div>
+
+  <div class="story">
+    <h2>2 · Add an officer <span class="tag">US-2</span></h2>
+    <p class="role">Add a new hire; the establishment and dashboard update instantly.</p>
+    <video src="videos/us2-add-officer.webm" controls muted playsinline preload="metadata"></video>
+    <ol>
+      <li>Go to <strong>Officers</strong> → <strong>+ Add officer</strong>.</li>
+      <li>Enter a badge number and name, then <strong>Save</strong>.</li>
+      <li>The roster shows the new officer and the headcount rises to 28. The edit is attributed to you and audited.</li>
+    </ol>
+  </div>
+
+  <div class="story">
+    <h2>3 · Assign an officer to a position <span class="tag">US-3</span></h2>
+    <p class="role">Keep staffing levels and vacancy deficits current.</p>
+    <video src="videos/us3-assign-officer.webm" controls muted playsinline preload="metadata"></video>
+    <ol>
+      <li>Go to <strong>Assignments</strong> → <strong>+ Assign officer</strong>.</li>
+      <li>Pick an officer and a position, set the start date, and <strong>Assign</strong>.</li>
+      <li>Staffing views recompute automatically.</li>
+    </ol>
+  </div>
+
+  <div class="story">
+    <h2>4 · Query data &amp; export an encrypted CSV <span class="tag">US-4</span></h2>
+    <p class="role">Run ad-hoc SQL and share a figure — without plaintext ever touching disk.</p>
+    <video src="videos/us4-query-export-csv.webm" controls muted playsinline preload="metadata"></video>
+    <ol>
+      <li>Open <strong>SQL Console</strong>, write a query, and press <strong>Run</strong> (or Ctrl/Cmd+Enter).</li>
+      <li>Export the result — the only option is an <strong>encrypted</strong> <code>.csv.enc</code>, never a plain CSV.</li>
+      <li>Recover it later with the same passphrase from <em>Data &amp; Security → Decrypt a file</em>.</li>
+    </ol>
+  </div>
+
+  <div class="story">
+    <h2>5 · Export changes &amp; merge — no Node <span class="tag">US-5</span></h2>
+    <p class="role">The coordinator merges everyone's offline edits inside the same app.</p>
+    <video src="videos/us5-export-and-merge.webm" controls muted playsinline preload="metadata"></video>
+    <ol>
+      <li>An operator works, then <strong>Export my changes</strong> → an encrypted <code>.hrischanges</code> delta.</li>
+      <li>A coordinator opens today's truth, goes to <strong>Data &amp; Security → Merge operator changes</strong>, and
+        selects the change files. cr-sqlite (a CRDT) converges everyone's edits.</li>
+      <li><strong>Export merged truth</strong> for tomorrow. No server, no Node, no admin rights.</li>
+    </ol>
+  </div>
+
+  <div class="story">
+    <h2>6 · Lock the session <span class="tag">US-6</span></h2>
+    <p class="role">Wipe decrypted data from memory when you step away.</p>
+    <video src="videos/us6-lock-session.webm" controls muted playsinline preload="metadata"></video>
+    <ol>
+      <li>Click <strong>Lock session</strong>.</li>
+      <li>The app returns to the gate and clears the in-memory database, key, and identity.</li>
+      <li>Export your changes first — unsaved work is lost by design (no plaintext at rest).</li>
+    </ol>
+  </div>
+
+  <footer>
+    Recordings are generated by <code>npm run test:e2e</code> · fictional demo data · proof of concept ·
+    <a href="index.html">overview</a>
+  </footer>
+</div>
+</body>
+</html>
