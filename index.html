@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Offline HRIS — Protected B (Proof of Concept)</title>
+<style>
+  :root {
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --border:#2a2f3a;
+    --text:#e6e9ef; --muted:#93a0b4; --accent:#4f8cff; --accent2:#34d399;
+    --amber:#fbbf24; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#eef1f5; --panel:#fff; --panel2:#f3f5f8; --border:#dde2ea;
+      --text:#1a1d24; --muted:#5b6472; --accent:#2563eb; --accent2:#059669; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--text); line-height:1.6; }
+  .wrap { max-width:860px; margin:0 auto; padding:32px 20px 64px; }
+  header.hero { text-align:center; padding:28px 0 8px; }
+  .logo { font-size:52px; color:var(--accent); }
+  h1 { font-size:32px; margin:10px 0 4px; letter-spacing:-.01em; }
+  .tag { color:var(--muted); font-size:15px; }
+  .chips { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin:16px 0 24px; }
+  .chip { font-size:12px; padding:4px 11px; border-radius:999px; border:1px solid var(--border);
+    background:var(--panel2); color:var(--muted); font-family:var(--mono); }
+  .cta { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin:8px 0 8px; }
+  .btn { display:inline-flex; align-items:center; gap:8px; padding:12px 20px; border-radius:10px;
+    text-decoration:none; font-weight:600; font-size:15px; border:1px solid var(--border); color:var(--text); background:var(--panel); }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .btn:hover { border-color:var(--accent); }
+  .banner { border:1px solid var(--border); border-left-width:4px; border-radius:10px; padding:14px 16px; margin:14px 0; background:var(--panel); }
+  .banner.poc { border-left-color:var(--amber); }
+  .banner.offline { border-left-color:var(--accent); }
+  .banner.fake { border-left-color:var(--accent2); }
+  .banner strong { display:block; margin-bottom:2px; }
+  h2 { font-size:20px; margin:34px 0 10px; }
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:18px 20px; margin:12px 0; }
+  ul { margin:8px 0; padding-left:20px; }
+  li { margin:5px 0; }
+  code { font-family:var(--mono); font-size:.9em; background:var(--panel2); padding:1px 6px; border-radius:5px; }
+  .steps { counter-reset:s; list-style:none; padding:0; }
+  .steps li { position:relative; padding:10px 0 10px 44px; border-bottom:1px solid var(--border); }
+  .steps li:last-child { border-bottom:none; }
+  .steps li::before { counter-increment:s; content:counter(s); position:absolute; left:0; top:10px;
+    width:28px; height:28px; border-radius:50%; background:var(--accent); color:#fff; display:flex;
+    align-items:center; justify-content:center; font-weight:700; font-size:13px; }
+  footer { margin-top:40px; padding-top:20px; border-top:1px solid var(--border); color:var(--muted); font-size:13px; text-align:center; }
+  a { color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <div class="logo">⬡</div>
+    <h1>Offline HRIS</h1>
+    <div class="tag">A Protected&nbsp;B–oriented HR information system that runs entirely offline in one HTML file.</div>
+    <div class="chips">
+      <span class="chip">offline-first</span>
+      <span class="chip">encrypted at rest</span>
+      <span class="chip">CRDT sync</span>
+      <span class="chip">single index.html</span>
+      <span class="chip">proof of concept</span>
+    </div>
+    <div class="cta">
+      <a class="btn primary" href="app.html">▶ Try the live demo</a>
+      <a class="btn" href="https://github.com/rheophile10/offline-Protected-B-HRIS">View source on GitHub</a>
+    </div>
+  </header>
+
+  <div class="banner poc">
+    <strong>⚠️ This is a proof of concept.</strong>
+    An exploratory prototype — <em>not</em> a production-authorized system. It has not undergone a Privacy Impact
+    Assessment, threat/risk assessment, or security authorization, and must not be used with real personnel data.
+  </div>
+  <div class="banner offline">
+    <strong>🔌 Meant to run offline.</strong>
+    The real deployment is the single <code>index.html</code> <strong>downloaded and opened locally</strong>
+    (<code>file://</code>) on a controlled machine — no server, no network. The app even forbids network access at
+    runtime via <code>Content-Security-Policy: connect-src 'none'</code>. The hosted demo below is for convenience
+    only.
+  </div>
+  <div class="banner fake">
+    <strong>🧪 All data is fictional.</strong>
+    The bundled dataset — a “Juárez Police Department” with sample officers, badges, salaries, positions, and
+    neighbourhoods — is entirely synthetic and invented for demonstration. It does not represent real people or
+    units; any resemblance is coincidental.
+  </div>
+
+  <h2>What it is</h2>
+  <div class="card">
+    <ul>
+      <li>A workforce-planning HRIS: officers, positions, assignments, live staffing gaps, payroll, and a SQL console.</li>
+      <li>Runs <strong>SQLite (cr-sqlite) in the browser</strong> via WebAssembly — the whole engine is inlined into one file.</li>
+      <li>The database lives only in memory; the only things written to disk are <strong>encrypted</strong> files.</li>
+      <li>Built with Vite; ships as a single ~5&nbsp;MB self-contained <code>index.html</code>.</li>
+    </ul>
+  </div>
+
+  <h2>Security model</h2>
+  <div class="card">
+    <ul>
+      <li><strong>Encrypted at rest</strong> — AES-256-GCM, PBKDF2-SHA-256 (250k iterations), per-file salt + IV.</li>
+      <li><strong>Non-extractable keys</strong> — the raw key never exists in JavaScript and can't be exported.</li>
+      <li><strong>No exfiltration</strong> — a strict CSP (<code>connect-src 'none'</code>) blocks every network API; the
+        WASM is inlined and never fetched, so that rule holds.</li>
+      <li><strong>No plaintext at rest</strong> — no plain <code>.sqlite</code>/<code>.csv</code> export; result exports are
+        encrypted too.</li>
+      <li><strong>Attribution &amp; audit</strong> — operator identity gate + append-only change/session logs.</li>
+    </ul>
+    <p style="margin:8px 0 0"><a href="https://github.com/rheophile10/offline-Protected-B-HRIS/blob/main/standards.md">Read the binding standards →</a></p>
+  </div>
+
+  <h2>How offline multi-operator sync works</h2>
+  <div class="card">
+    <ol class="steps">
+      <li><strong>Morning</strong> — a coordinator hands out one encrypted <code>truth.hrisdump</code> and the day's passphrase.</li>
+      <li><strong>Work offline</strong> — each planner opens the truth, picks their identity, and edits with no network.</li>
+      <li><strong>Export changes</strong> — at day's end each exports an encrypted <code>.hrischanges</code> delta.</li>
+      <li><strong>Merge</strong> — the coordinator runs a small Node tool that merges everyone's deltas into a new truth.
+        cr-sqlite (a CRDT) converges divergent edits deterministically, so nobody's work is lost.</li>
+    </ol>
+  </div>
+
+  <h2>Run it offline</h2>
+  <div class="card">
+    <p>Open the <a href="app.html">demo</a>, then use your browser's <em>Save Page As…</em> to keep a local copy — or
+    clone the repo and run <code>npm run build</code> to produce your own <code>dist/index.html</code>. Double-click the
+    saved file; it works with no server and no connection.</p>
+  </div>
+
+  <footer>
+    Fictional demonstration data · proof of concept ·
+    <a href="https://github.com/rheophile10/offline-Protected-B-HRIS">source</a>
+  </footer>
+</div>
+</body>
+</html>
