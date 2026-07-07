@@ -188,6 +188,62 @@ CREATE TABLE IF NOT EXISTS leave_records (
   updated_at   INTEGER NOT NULL DEFAULT 0
 );
 
+-- ---- conduct, performance & personnel file (CRRs) ----
+CREATE TABLE IF NOT EXISTS performance_reviews (
+  id           TEXT PRIMARY KEY NOT NULL,       -- UUID
+  badge_number INTEGER NOT NULL DEFAULT 0,
+  period       TEXT,                             -- e.g. 2026-H1
+  rating       INTEGER,                          -- 1..5
+  reviewer     TEXT,
+  summary      TEXT,
+  created_by   TEXT NOT NULL DEFAULT '',
+  updated_by   TEXT NOT NULL DEFAULT '',
+  updated_at   INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS conduct_records (
+  id           TEXT PRIMARY KEY NOT NULL,       -- UUID
+  badge_number INTEGER NOT NULL DEFAULT 0,
+  type         TEXT NOT NULL DEFAULT '',         -- Complaint | Use of Force | Commendation | Internal
+  opened       TEXT,
+  status       TEXT NOT NULL DEFAULT 'Open',     -- Open | Under Review | Closed
+  disposition  TEXT,                             -- Founded | Unfounded | Exonerated | N/A
+  summary      TEXT,
+  created_by   TEXT NOT NULL DEFAULT '',
+  updated_by   TEXT NOT NULL DEFAULT '',
+  updated_at   INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS emergency_contacts (
+  id           TEXT PRIMARY KEY NOT NULL,       -- UUID
+  badge_number INTEGER NOT NULL DEFAULT 0,
+  name         TEXT NOT NULL DEFAULT '',
+  relationship TEXT,
+  phone        TEXT,
+  created_by   TEXT NOT NULL DEFAULT '',
+  updated_by   TEXT NOT NULL DEFAULT '',
+  updated_at   INTEGER NOT NULL DEFAULT 0
+);
+
+-- ---- equipment / assets (CRRs) ----
+CREATE TABLE IF NOT EXISTS assets (
+  tag          TEXT PRIMARY KEY NOT NULL,        -- centrally allocated asset tag
+  kind         TEXT NOT NULL DEFAULT '',         -- Firearm | Vehicle | Radio | Body-Worn Camera | Taser
+  serial       TEXT,
+  status       TEXT NOT NULL DEFAULT 'In service', -- In service | Maintenance | Retired
+  created_by   TEXT NOT NULL DEFAULT '',
+  updated_by   TEXT NOT NULL DEFAULT '',
+  updated_at   INTEGER NOT NULL DEFAULT 0
+);
+CREATE TABLE IF NOT EXISTS asset_assignments (
+  id           TEXT PRIMARY KEY NOT NULL,       -- UUID
+  asset_tag    TEXT NOT NULL DEFAULT '',
+  badge_number INTEGER NOT NULL DEFAULT 0,
+  issued       TEXT,
+  returned     TEXT,
+  created_by   TEXT NOT NULL DEFAULT '',
+  updated_by   TEXT NOT NULL DEFAULT '',
+  updated_at   INTEGER NOT NULL DEFAULT 0
+);
+
 -- ---- local/session metadata (NOT a CRR: excluded from changeset export) ----
 CREATE TABLE IF NOT EXISTS sync_meta (
   key   TEXT PRIMARY KEY NOT NULL,
@@ -206,6 +262,11 @@ SELECT crsql_as_crr('applicants');
 SELECT crsql_as_crr('applications');
 SELECT crsql_as_crr('officer_certifications');
 SELECT crsql_as_crr('leave_records');
+SELECT crsql_as_crr('performance_reviews');
+SELECT crsql_as_crr('conduct_records');
+SELECT crsql_as_crr('emergency_contacts');
+SELECT crsql_as_crr('assets');
+SELECT crsql_as_crr('asset_assignments');
 
 -- ---- reporting views (recompute from base tables after every merge) ----
 CREATE VIEW IF NOT EXISTS v_current_assignments AS
@@ -265,3 +326,14 @@ SELECT l.id, l.badge_number, o.name AS officer_name, o.rank,
 FROM leave_records l
 JOIN officers o     ON o.badge_number = l.badge_number
 JOIN leave_types t  ON t.code = l.leave_code;
+
+-- assets with their current holder (open assignment = not yet returned)
+CREATE VIEW IF NOT EXISTS v_assets AS
+SELECT a.tag, a.kind, a.serial, a.status,
+       h.badge_number AS holder_badge, o.name AS holder_name, h.issued
+FROM assets a
+LEFT JOIN asset_assignments h
+       ON h.id = (SELECT aa.id FROM asset_assignments aa
+                  WHERE aa.asset_tag = a.tag AND aa.returned IS NULL
+                  ORDER BY aa.issued DESC LIMIT 1)
+LEFT JOIN officers o ON o.badge_number = h.badge_number;

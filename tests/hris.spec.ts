@@ -167,6 +167,35 @@ test("US-11 audit shows attributed changes and session events", async ({ page })
   await expect(page.getByText("session_open")).toBeVisible();
 });
 
+test("US-12 open an officer file and add a review", async ({ page }) => {
+  await openDemoDashboard(page);
+  await nav(page, "Officer File");
+  await page.locator(".head-actions select").selectOption("1011");
+  // seeded personnel data shows
+  await expect(page.getByText("Marisol Villareal")).toBeVisible();
+  await expect(page.locator("section", { hasText: "Conduct records" })).toContainText("Use of Force");
+  // add a performance review
+  await page.locator("section", { hasText: "Performance reviews" }).getByRole("button", { name: "+ Add" }).click();
+  await expect(page.locator(".modal")).toBeVisible();
+  await page.locator(".modal input").nth(0).fill("2026-H2");
+  await page.locator(".modal").getByRole("button", { name: "Save" }).click();
+  await expect(page.locator(".modal")).toHaveCount(0);
+  await expect(page.locator("section", { hasText: "Performance reviews" })).toContainText("2026-H2");
+});
+
+test("US-13 issue equipment to an officer", async ({ page }) => {
+  await openDemoDashboard(page);
+  await nav(page, "Equipment");
+  const issued = page.locator(".kpi").nth(1).locator(".kpi-value"); // "Issued" card
+  await expect(issued).toHaveText("12");
+  // issue the first available asset
+  await page.getByRole("button", { name: "Issue" }).first().click();
+  await expect(page.locator(".modal")).toBeVisible();
+  await page.locator(".modal").getByRole("button", { name: "Issue" }).click();
+  await expect(page.locator(".modal")).toHaveCount(0);
+  await expect(issued).toHaveText("13");
+});
+
 test("US-6 lock the session to clear memory", async ({ page }) => {
   await openDemoDashboard(page);
   await page.getByRole("button", { name: /Lock session/ }).click();

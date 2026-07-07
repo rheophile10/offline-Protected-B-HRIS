@@ -10,23 +10,27 @@ import { Assignments } from "./screens/Assignments";
 import { Recruitment } from "./screens/Recruitment";
 import { Compliance } from "./screens/Compliance";
 import { Leave } from "./screens/Leave";
+import { OfficerFile } from "./screens/OfficerFile";
+import { Equipment } from "./screens/Equipment";
 import { Planning } from "./screens/Planning";
 import { Audit } from "./screens/Audit";
 import { SqlConsole } from "./screens/SqlConsole";
 import { Security } from "./screens/Security";
 
 type Screen =
-  | "dashboard" | "officers" | "positions" | "assignments" | "leave"
-  | "recruitment" | "compliance" | "planning" | "audit" | "sql" | "security";
+  | "dashboard" | "officers" | "positions" | "assignments" | "file" | "leave"
+  | "recruitment" | "compliance" | "equipment" | "planning" | "audit" | "sql" | "security";
 
 const NAV: { id: Screen; label: string; icon: string }[] = [
   { id: "dashboard", label: "Dashboard", icon: "◧" },
   { id: "officers", label: "Officers", icon: "◑" },
+  { id: "file", label: "Officer File", icon: "▦" },
   { id: "positions", label: "Positions", icon: "▤" },
   { id: "assignments", label: "Assignments", icon: "⇄" },
   { id: "leave", label: "Leave", icon: "☂" },
   { id: "recruitment", label: "Recruitment", icon: "⌸" },
   { id: "compliance", label: "Compliance", icon: "✓" },
+  { id: "equipment", label: "Equipment", icon: "⚙" },
   { id: "planning", label: "Planning", icon: "◔" },
   { id: "audit", label: "Audit", icon: "❑" },
   { id: "sql", label: "SQL Console", icon: "›_" },
@@ -101,9 +105,11 @@ function Shell() {
         {screen === "officers" && <Officers />}
         {screen === "positions" && <Positions />}
         {screen === "assignments" && <Assignments />}
+        {screen === "file" && <OfficerFile />}
         {screen === "leave" && <Leave />}
         {screen === "recruitment" && <Recruitment />}
         {screen === "compliance" && <Compliance />}
+        {screen === "equipment" && <Equipment />}
         {screen === "planning" && <Planning />}
         {screen === "audit" && <Audit />}
         {screen === "sql" && <SqlConsole />}

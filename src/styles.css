@@ -132,6 +132,12 @@ td.bad, .num.bad { color: var(--danger); }
 .kpi-btn:hover { border-color: var(--accent); }
 .kpi-btn.bad .kpi-value { color: var(--danger); }
 
+/* officer file + equipment */
+.rowhead { display: flex; justify-content: space-between; align-items: center; }
+.filecard { display: flex; gap: 14px; align-items: center; }
+.file-avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.ministatus { width: auto; padding: 3px 6px; font-size: 12px; }
+
 /* bars */
 .bars { display: flex; flex-direction: column; gap: 9px; }
 .bar-row { display: grid; grid-template-columns: 110px 1fr 54px; align-items: center; gap: 10px; }

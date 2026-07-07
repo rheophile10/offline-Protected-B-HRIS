@@ -83,6 +83,21 @@ events, **so that** end-of-day accountability is clear.
 *Acceptance:* the audit screen lists change events (operator, entity, action) and
 session events (open/lock/export). A change I make appears attributed to me.
 
+### US-12 — Open an officer's file
+**As** an HR officer, **I want** one place with an officer's emergency contacts,
+performance reviews, and conduct records, **so that** their file is complete.
+
+*Acceptance:* selecting an officer shows their contacts, reviews (with ratings),
+and conduct records; I can add a review and it appears immediately.
+
+### US-13 — Issue equipment
+**As** a quartermaster, **I want** an asset register with issue/return, **so that**
+I know who holds each firearm, vehicle, radio, or camera.
+
+*Acceptance:* the equipment screen shows in-service / issued / available counts;
+issuing an available asset to an officer records the holder and the issued count
+rises.
+
 ### US-6 — Lock the session
 **As** a planner, **I want** to lock the session when I step away, **so that** the
 decrypted data is wiped from memory.

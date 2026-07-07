@@ -5,7 +5,7 @@ mkdirSync(OUT, { recursive: true });
 const report = JSON.parse(readFileSync("test-results/report.json", "utf8"));
 const slug = (title) => {
   const m = title.match(/^US-(\d+)/);
-  const names = { 1:"start-session", 2:"add-officer", 3:"assign-officer", 4:"query-export-csv", 5:"export-and-merge", 6:"lock-session", 7:"recruitment-hire", 8:"compliance", 9:"leave", 10:"planning", 11:"audit" };
+  const names = { 1:"start-session", 2:"add-officer", 3:"assign-officer", 4:"query-export-csv", 5:"export-and-merge", 6:"lock-session", 7:"recruitment-hire", 8:"compliance", 9:"leave", 10:"planning", 11:"audit", 12:"officer-file", 13:"equipment" };
   return m ? `us${m[1]}-${names[m[1]]}` : title.toLowerCase().replace(/\W+/g,"-");
 };
 const vids = [];

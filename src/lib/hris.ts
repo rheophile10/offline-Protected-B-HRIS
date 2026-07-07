@@ -441,6 +441,96 @@ export async function deleteLeave(id: string): Promise<void> {
   await logChange("leave_records", id, "delete");
 }
 
+// ---------- Personnel file: reviews, conduct, emergency contacts ----------
+export interface Review { id: string; period: string | null; rating: number | null; reviewer: string | null; summary: string | null }
+export interface ConductRecord { id: string; type: string; opened: string | null; status: string; disposition: string | null; summary: string | null }
+export interface EmergencyContact { id: string; name: string; relationship: string | null; phone: string | null }
+
+export const CONDUCT_TYPES = ["Complaint", "Use of Force", "Commendation", "Internal"];
+export const CONDUCT_STATUSES = ["Open", "Under Review", "Closed"];
+export const DISPOSITIONS = ["", "Founded", "Unfounded", "Exonerated", "N/A"];
+
+export function listReviews(badge: number): Promise<Review[]> {
+  return all<Review>("SELECT id,period,rating,reviewer,summary FROM performance_reviews WHERE badge_number=? ORDER BY period DESC", [badge]);
+}
+export async function addReview(badge: number, period: string, rating: number | null, reviewer: string, summary: string): Promise<void> {
+  const user = requireUser(); const id = uuid();
+  await run(`INSERT INTO performance_reviews(id,badge_number,period,rating,reviewer,summary,created_by,updated_by,updated_at) VALUES(?,?,?,?,?,?,?,?,?)`,
+    [id, badge, period, rating, reviewer || null, summary || null, user, user, now()]);
+  await logChange("performance_reviews", id, "insert", null, null, period);
+}
+export async function deleteReview(id: string): Promise<void> { requireUser(); await run("DELETE FROM performance_reviews WHERE id=?", [id]); await logChange("performance_reviews", id, "delete"); }
+
+export function listConduct(badge: number): Promise<ConductRecord[]> {
+  return all<ConductRecord>("SELECT id,type,opened,status,disposition,summary FROM conduct_records WHERE badge_number=? ORDER BY opened DESC", [badge]);
+}
+export async function addConduct(badge: number, type: string, opened: string, status: string, summary: string): Promise<void> {
+  const user = requireUser(); const id = uuid();
+  await run(`INSERT INTO conduct_records(id,badge_number,type,opened,status,disposition,summary,created_by,updated_by,updated_at) VALUES(?,?,?,?,?,NULL,?,?,?,?)`,
+    [id, badge, type, opened, status, summary || null, user, user, now()]);
+  await logChange("conduct_records", id, "insert", null, null, type);
+}
+export async function updateConduct(id: string, status: string, disposition: string): Promise<void> {
+  const user = requireUser();
+  await run("UPDATE conduct_records SET status=?, disposition=?, updated_by=?, updated_at=? WHERE id=?", [status, disposition || null, user, now(), id]);
+  await logChange("conduct_records", id, "update", "status", null, status);
+}
+export async function deleteConduct(id: string): Promise<void> { requireUser(); await run("DELETE FROM conduct_records WHERE id=?", [id]); await logChange("conduct_records", id, "delete"); }
+
+export function listContacts(badge: number): Promise<EmergencyContact[]> {
+  return all<EmergencyContact>("SELECT id,name,relationship,phone FROM emergency_contacts WHERE badge_number=? ORDER BY name", [badge]);
+}
+export async function addContact(badge: number, name: string, relationship: string, phone: string): Promise<void> {
+  const user = requireUser(); const id = uuid();
+  await run(`INSERT INTO emergency_contacts(id,badge_number,name,relationship,phone,created_by,updated_by,updated_at) VALUES(?,?,?,?,?,?,?,?)`,
+    [id, badge, name, relationship || null, phone || null, user, user, now()]);
+  await logChange("emergency_contacts", id, "insert", null, null, name);
+}
+export async function deleteContact(id: string): Promise<void> { requireUser(); await run("DELETE FROM emergency_contacts WHERE id=?", [id]); await logChange("emergency_contacts", id, "delete"); }
+
+// ---------- Equipment / assets ----------
+export const ASSET_KINDS = ["Firearm", "Vehicle", "Radio", "Body-Worn Camera", "Taser"];
+export const ASSET_STATUSES = ["In service", "Maintenance", "Retired"];
+export interface AssetRow {
+  tag: string; kind: string; serial: string | null; status: string;
+  holder_badge: number | null; holder_name: string | null; issued: string | null;
+}
+export function listAssets(): Promise<AssetRow[]> {
+  return all<AssetRow>("SELECT tag,kind,serial,status,holder_badge,holder_name,issued FROM v_assets ORDER BY kind, tag");
+}
+export async function addAsset(tag: string, kind: string, serial: string): Promise<void> {
+  const user = requireUser();
+  await run(`INSERT INTO assets(tag,kind,serial,status,created_by,updated_by,updated_at) VALUES(?,?,?,'In service',?,?,?)`,
+    [tag, kind, serial || null, user, user, now()]);
+  await logChange("assets", tag, "insert", null, null, kind);
+}
+export async function setAssetStatus(tag: string, status: string): Promise<void> {
+  const user = requireUser();
+  await run("UPDATE assets SET status=?, updated_by=?, updated_at=? WHERE tag=?", [status, user, now(), tag]);
+  await logChange("assets", tag, "update", "status", null, status);
+}
+export async function deleteAsset(tag: string): Promise<void> {
+  requireUser();
+  await run("DELETE FROM asset_assignments WHERE asset_tag=?", [tag]);
+  await run("DELETE FROM assets WHERE tag=?", [tag]);
+  await logChange("assets", tag, "delete");
+}
+export async function issueAsset(tag: string, badge: number, issued: string): Promise<void> {
+  const user = requireUser();
+  // close any open holding first, then issue
+  await run("UPDATE asset_assignments SET returned=?, updated_by=?, updated_at=? WHERE asset_tag=? AND returned IS NULL", [issued, user, now(), tag]);
+  const id = uuid();
+  await run(`INSERT INTO asset_assignments(id,asset_tag,badge_number,issued,returned,created_by,updated_by,updated_at) VALUES(?,?,?,?,NULL,?,?,?)`,
+    [id, tag, badge, issued, user, user, now()]);
+  await logChange("asset_assignments", id, "insert", null, null, tag + "→" + badge);
+}
+export async function returnAsset(tag: string): Promise<void> {
+  const user = requireUser();
+  const today = new Date().toISOString().slice(0, 10);
+  await run("UPDATE asset_assignments SET returned=?, updated_by=?, updated_at=? WHERE asset_tag=? AND returned IS NULL", [today, user, now(), tag]);
+  await logChange("assets", tag, "update", "returned", null, today);
+}
+
 // ---------- Audit views ----------
 export interface SessionLogRow {
   at: number;
