@@ -1,0 +1,229 @@
+// Domain layer for the HRIS screens. Async (cr-sqlite). Every mutating op:
+//  - uses bound parameters (standards §5),
+//  - stamps updated_by / updated_at (crdt-sync-spec §5.3),
+//  - appends a change_event audit row (app-development-requirements §5.1).
+import { all, run, scalar } from "./db";
+import { requireUser } from "./identity";
+import { logChange } from "./audit";
+
+export interface Officer {
+  badge_number: number;
+  name: string;
+  rank: string | null;
+  start_date: string | null;
+  current_salary: number | null;
+  status: string;
+}
+export interface Position {
+  position_number: string;
+  title: string;
+  rank_requirement: string | null;
+  term_years: number | null;
+  reports_to: string | null;
+  detachment: string | null;
+  headcount_qty: number;
+  pay_min: number | null;
+  pay_max: number | null;
+  job_description: string | null;
+}
+export interface Assignment {
+  id: string;
+  badge_number: number;
+  position_number: string;
+  start_date: string | null;
+  end_date: string | null;
+  status: string;
+}
+export interface AssignmentView extends Assignment {
+  officer_name: string;
+  position_title: string;
+}
+export interface StaffingRow {
+  position_number: string;
+  title: string;
+  rank_requirement: string | null;
+  detachment: string | null;
+  budgeted: number;
+  filled: number;
+  deficit: number;
+}
+
+export const ASSIGNMENT_STATUSES = ["Active", "Completed", "Transferred", "Retired", "Fired"];
+export const OFFICER_STATUSES = ["Active", "On Leave", "Suspended", "Retired", "Terminated"];
+
+const now = () => Date.now();
+const uuid = () => crypto.randomUUID();
+
+export function ranks(): Promise<string[]> {
+  return all<{ rank: string }>("SELECT rank FROM ranks ORDER BY sort_order").then((r) => r.map((x) => x.rank));
+}
+export function detachments(): Promise<string[]> {
+  return all<{ name: string }>("SELECT name FROM detachments ORDER BY name").then((r) => r.map((x) => x.name));
+}
+
+// ---------- Officers ----------
+export function listOfficers(search = ""): Promise<Officer[]> {
+  const q = search.trim();
+  if (q) {
+    const like = `%${q}%`;
+    return all<Officer>(
+      `SELECT badge_number,name,rank,start_date,current_salary,status FROM officers
+       WHERE name LIKE ? OR rank LIKE ? OR CAST(badge_number AS TEXT) LIKE ? ORDER BY badge_number`,
+      [like, like, like],
+    );
+  }
+  return all<Officer>("SELECT badge_number,name,rank,start_date,current_salary,status FROM officers ORDER BY badge_number");
+}
+export async function upsertOfficer(o: Officer, isNew: boolean): Promise<void> {
+  const user = requireUser();
+  if (isNew) {
+    await run(
+      `INSERT INTO officers(badge_number,name,rank,start_date,current_salary,status,created_by,updated_by,updated_at)
+       VALUES(?,?,?,?,?,?,?,?,?)`,
+      [o.badge_number, o.name, o.rank, o.start_date, o.current_salary, o.status, user, user, now()],
+    );
+    await logChange("officers", o.badge_number, "insert", null, null, o.name);
+  } else {
+    await run(
+      `UPDATE officers SET name=?, rank=?, start_date=?, current_salary=?, status=?, updated_by=?, updated_at=?
+       WHERE badge_number=?`,
+      [o.name, o.rank, o.start_date, o.current_salary, o.status, user, now(), o.badge_number],
+    );
+    await logChange("officers", o.badge_number, "update", null, null, o.name);
+  }
+}
+export async function deleteOfficer(badge: number): Promise<void> {
+  requireUser();
+  await run("DELETE FROM assignments WHERE badge_number = ?", [badge]);
+  await run("DELETE FROM officers WHERE badge_number = ?", [badge]);
+  await logChange("officers", badge, "delete");
+}
+/** Map of badge_number → current active position title (one query). */
+export async function currentPostings(): Promise<Record<number, string>> {
+  const rows = await all<{ badge_number: number; position_title: string }>(
+    "SELECT badge_number, position_title FROM v_current_assignments",
+  );
+  const m: Record<number, string> = {};
+  for (const r of rows) m[r.badge_number] = r.position_title;
+  return m;
+}
+
+// ---------- Positions ----------
+export function listPositions(search = ""): Promise<Position[]> {
+  const q = search.trim();
+  const cols =
+    "position_number,title,rank_requirement,term_years,reports_to,detachment,headcount_qty,pay_min,pay_max,job_description";
+  if (q) {
+    const like = `%${q}%`;
+    return all<Position>(
+      `SELECT ${cols} FROM positions WHERE title LIKE ? OR position_number LIKE ? OR detachment LIKE ?
+       ORDER BY position_number`,
+      [like, like, like],
+    );
+  }
+  return all<Position>(`SELECT ${cols} FROM positions ORDER BY position_number`);
+}
+export async function upsertPosition(p: Position, isNew: boolean): Promise<void> {
+  const user = requireUser();
+  if (isNew) {
+    await run(
+      `INSERT INTO positions(position_number,title,rank_requirement,term_years,reports_to,detachment,headcount_qty,pay_min,pay_max,job_description,created_by,updated_by,updated_at)
+       VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+      [p.position_number, p.title, p.rank_requirement, p.term_years, p.reports_to, p.detachment, p.headcount_qty, p.pay_min, p.pay_max, p.job_description, user, user, now()],
+    );
+    await logChange("positions", p.position_number, "insert", null, null, p.title);
+  } else {
+    await run(
+      `UPDATE positions SET title=?, rank_requirement=?, term_years=?, reports_to=?, detachment=?, headcount_qty=?, pay_min=?, pay_max=?, job_description=?, updated_by=?, updated_at=?
+       WHERE position_number=?`,
+      [p.title, p.rank_requirement, p.term_years, p.reports_to, p.detachment, p.headcount_qty, p.pay_min, p.pay_max, p.job_description, user, now(), p.position_number],
+    );
+    await logChange("positions", p.position_number, "update", null, null, p.title);
+  }
+}
+export async function deletePosition(num: string): Promise<void> {
+  requireUser();
+  await run("DELETE FROM assignments WHERE position_number = ?", [num]);
+  await run("DELETE FROM positions WHERE position_number = ?", [num]);
+  await logChange("positions", num, "delete");
+}
+
+// ---------- Assignments ----------
+export function listAssignments(activeOnly = false): Promise<AssignmentView[]> {
+  const where = activeOnly ? "WHERE a.status='Active' AND a.end_date IS NULL" : "";
+  return all<AssignmentView>(
+    `SELECT a.id,a.badge_number,a.position_number,a.start_date,a.end_date,a.status,
+            o.name AS officer_name, p.title AS position_title
+     FROM assignments a
+     JOIN officers o ON o.badge_number=a.badge_number
+     JOIN positions p ON p.position_number=a.position_number
+     ${where}
+     ORDER BY a.status='Active' DESC, a.start_date DESC`,
+  );
+}
+export async function createAssignment(a: Omit<Assignment, "id">): Promise<void> {
+  const user = requireUser();
+  const id = uuid();
+  await run(
+    `INSERT INTO assignments(id,badge_number,position_number,start_date,end_date,status,created_by,updated_by,updated_at)
+     VALUES(?,?,?,?,?,?,?,?,?)`,
+    [id, a.badge_number, a.position_number, a.start_date, a.end_date, a.status, user, user, now()],
+  );
+  await logChange("assignments", id, "insert", null, null, a.position_number);
+}
+export async function endAssignment(id: string, endDate: string, status: string): Promise<void> {
+  const user = requireUser();
+  await run("UPDATE assignments SET end_date=?, status=?, updated_by=?, updated_at=? WHERE id=?", [
+    endDate,
+    status,
+    user,
+    now(),
+    id,
+  ]);
+  await logChange("assignments", id, "update", "status", null, status);
+}
+export async function deleteAssignment(id: string): Promise<void> {
+  requireUser();
+  await run("DELETE FROM assignments WHERE id = ?", [id]);
+  await logChange("assignments", id, "delete");
+}
+
+// ---------- Dashboard ----------
+export interface Kpis {
+  officers: number;
+  budgeted: number;
+  filled: number;
+  deficit: number;
+  payroll: number;
+}
+export async function kpis(): Promise<Kpis> {
+  const officers = Number((await scalar("SELECT COUNT(*) FROM officers")) ?? 0);
+  const budgeted = Number((await scalar("SELECT COALESCE(SUM(headcount_qty),0) FROM positions")) ?? 0);
+  const filled = Number((await scalar("SELECT COUNT(*) FROM v_current_assignments")) ?? 0);
+  const payroll = Number(
+    (await scalar("SELECT COALESCE(SUM(current_salary),0) FROM officers WHERE status='Active'")) ?? 0,
+  );
+  return { officers, budgeted, filled, deficit: budgeted - filled, payroll };
+}
+export function staffing(): Promise<StaffingRow[]> {
+  return all<StaffingRow>("SELECT position_number,title,rank_requirement,detachment,budgeted,filled,deficit FROM v_position_staffing ORDER BY deficit DESC, position_number");
+}
+export function rankHeadcount(): Promise<{ rank: string; budgeted: number; filled: number }[]> {
+  return all("SELECT rank, budgeted, filled FROM v_rank_headcount");
+}
+
+// ---------- Audit views ----------
+export interface ChangeEventRow {
+  at: number;
+  user_id: string;
+  entity_table: string;
+  entity_id: string;
+  action: string;
+  new_val: string | null;
+}
+export function recentChanges(limit = 100): Promise<ChangeEventRow[]> {
+  return all<ChangeEventRow>(
+    "SELECT at,user_id,entity_table,entity_id,action,new_val FROM change_event ORDER BY at DESC LIMIT ?",
+    [limit],
+  );
+}
