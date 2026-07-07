@@ -11,12 +11,12 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   retries: 0,
-  timeout: 60_000,
+  timeout: 120_000,
   reporter: [["list"], ["json", { outputFile: "test-results/report.json" }]],
   use: {
     viewport: { width: 1280, height: 800 },
     video: "on",
     acceptDownloads: true,
-    launchOptions: { slowMo: 350 }, // makes the recordings watchable
+    launchOptions: { slowMo: 800 }, // slow-motion so the how-to recordings are easy to follow
   },
 });
