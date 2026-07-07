@@ -11,7 +11,7 @@ import {
   resetDb,
   runScript,
 } from "./db";
-import { decryptText, encryptText, lock, setPassphrase } from "./crypto";
+import { decryptText, decryptWithSession, encryptText, lock, setPassphrase } from "./crypto";
 import { clearUser } from "./identity";
 import { logSession } from "./audit";
 import { download } from "./files";
@@ -97,6 +97,18 @@ export async function exportChanges(operatorLabel: string): Promise<{ empty: boo
   download(bytes, `${safe}-${today()}.${CHANGES_EXT}`, "application/octet-stream");
   await logSession("changes_export", `${safe}-${today()}.${CHANGES_EXT}`, dayId);
   return { empty: changeset.trim().length === 0 };
+}
+
+/**
+ * Coordinator merge, IN-BROWSER (no Node required). Decrypt one operator's
+ * `.hrischanges` with the session passphrase and apply it to the loaded truth.
+ * cr-sqlite converges; call once per operator file, then export a new truth.
+ * Returns the number of change rows applied.
+ */
+export async function mergeChangeset(bytes: Uint8Array): Promise<number> {
+  const sql = await decryptWithSession(bytes); // throws if wrong org passphrase / not our file
+  await applyChangesetSQL(sql);
+  return sql.split("\n").filter((l) => l.trim().length > 0).length;
 }
 
 /** Encrypt arbitrary text (e.g. CSV) and download as *.enc. */

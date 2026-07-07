@@ -61,6 +61,12 @@ export async function encryptText(plaintext: string): Promise<Uint8Array> {
   return out;
 }
 
+/** Decrypt file bytes using the current unlocked session passphrase. */
+export function decryptWithSession(bytes: Uint8Array): Promise<string> {
+  if (passphrase === null) throw new Error("Session is locked — no passphrase set.");
+  return decryptText(bytes, passphrase);
+}
+
 /** Decrypt file bytes with an explicit passphrase (used at unlock time). */
 export async function decryptText(bytes: Uint8Array, pw: string): Promise<string> {
   if (bytes.length < HEADER) throw new Error("File too small to be a valid encrypted file.");

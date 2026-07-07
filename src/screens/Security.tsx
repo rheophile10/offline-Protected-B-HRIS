@@ -1,15 +1,39 @@
 import { useState } from "react";
 import { useApp, Field, useLiveQuery } from "../ui";
-import { exportTruthDump, exportChanges, decryptToText, getWatermark } from "../lib/session";
+import { exportTruthDump, exportChanges, mergeChangeset, decryptToText, getWatermark } from "../lib/session";
 import { readFileBytes, download } from "../lib/files";
-import { recentChanges, type ChangeEventRow } from "../lib/hris";
+import { recentChanges, changesByOperator, type ChangeEventRow } from "../lib/hris";
+
+interface MergeResult { file: string; rows?: number; error?: string }
 
 export function Security({ onLock, userName }: { onLock: () => void; userName: string }) {
-  const { notify } = useApp();
+  const { notify, refresh } = useApp();
   const [decFile, setDecFile] = useState<File | null>(null);
   const [decPw, setDecPw] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
+  const [mergeResults, setMergeResults] = useState<MergeResult[]>([]);
+  const [merging, setMerging] = useState(false);
   const changes = useLiveQuery<ChangeEventRow[]>(() => recentChanges(50), []);
+  const byOperator = useLiveQuery<{ user_id: string; n: number }[]>(changesByOperator, []);
+
+  const doMerge = async (files: FileList | null) => {
+    if (!files || !files.length) return;
+    setMerging(true);
+    const results: MergeResult[] = [];
+    for (const f of Array.from(files)) {
+      try {
+        const rows = await mergeChangeset(await readFileBytes(f));
+        results.push({ file: f.name, rows });
+      } catch (e) {
+        results.push({ file: f.name, error: (e as Error).message });
+      }
+    }
+    setMergeResults(results);
+    setMerging(false);
+    refresh();
+    const ok = results.filter((r) => r.error === undefined).length;
+    notify(`Merged ${ok}/${results.length} file(s).`, ok === results.length ? "ok" : "err");
+  };
 
   const saveChanges = async () => {
     try {
@@ -69,6 +93,47 @@ export function Security({ onLock, userName }: { onLock: () => void; userName: s
           <button className="btn" onClick={saveTruth}>⭱ Export truth (.hrisdump)</button>
         </section>
       </div>
+
+      <section className="card pad">
+        <h2>Merge operator changes (coordinator)</h2>
+        <p className="muted small">
+          Open today's truth, then select the operators' <code>.hrischanges</code> files (encrypted with the same
+          passphrase). They are applied to the in-memory database here — <strong>no Node, no install</strong>. cr-sqlite
+          converges divergent edits; then export a new truth below. Order doesn't matter.
+        </p>
+        <div className="form-grid">
+          <Field label="Operator change files (.hrischanges)">
+            <label className="filepick">
+              <input
+                type="file"
+                accept=".hrischanges,.enc"
+                multiple
+                disabled={merging}
+                onChange={(e) => doMerge(e.target.files)}
+              />
+              <span className="filepick-btn">{merging ? "Merging…" : "Choose .hrischanges files"}</span>
+            </label>
+          </Field>
+        </div>
+        {mergeResults.length > 0 && (
+          <ul className="lint-list" style={{ color: "inherit" }}>
+            {mergeResults.map((r, i) => (
+              <li key={i} className={r.error ? "warn" : "ok"}>
+                {r.file}: {r.error ? `failed — ${r.error}` : `applied ${r.rows} change row(s)`}
+              </li>
+            ))}
+          </ul>
+        )}
+        {byOperator.length > 0 && (
+          <p className="muted small" style={{ marginTop: 10 }}>
+            Attributed changes now in the dataset:{" "}
+            {byOperator.map((o) => `${o.user_id || "(unattributed)"}: ${o.n}`).join(" · ")}
+          </p>
+        )}
+        <button className="btn good" style={{ marginTop: 12 }} onClick={saveTruth}>
+          ⭱ Export merged truth (.hrisdump)
+        </button>
+      </section>
 
       <section className="card pad">
         <h2>Session</h2>

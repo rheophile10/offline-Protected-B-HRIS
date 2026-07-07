@@ -139,11 +139,15 @@ Full detail: [docs/crdt-sync-spec.md](./docs/crdt-sync-spec.md). Binding points:
   Per-operator file passwords are prohibited (operators could not share one
   truth). Human identity lives *inside* the encrypted data (`app_user`,
   `change_event`), not in the encryption.
-- **Merge changesets, not competing full dumps.** Operators export deltas; the
+- **Merge changesets, not competing full dumps.** Operators export deltas; a
   coordinator merges them onto the truth. cr-sqlite guarantees convergence
   regardless of order.
-- **No merge in the operator build.** Merging happens out of band in
-  `scripts/merge-hris.mjs` (Node), never in the browser field build.
+- **Merge runs in the app — no Node, no install.** Target operators have no
+  admin rights; the product *is* the built `index.html`. A coordinator opens the
+  truth and applies each operator's `.hrischanges` on the Data & Security screen,
+  then exports a new truth. `scripts/merge-hris.mjs` (Node) is an **optional**
+  convenience for anyone who does have Node, and is used for the automated
+  convergence test — it is never a requirement for operating the product.
 - **Client-generated UUID keys** for any row an operator can create offline
   (`assignments.id`). Centrally-allocated keys (`badge_number`,
   `position_number`) may stay, treated as immutable identity.

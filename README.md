@@ -54,18 +54,18 @@ governance-procedure-requirements — untracked, local only).
    + the day's passphrase.
 2. **Operators** — open the truth, pick their identity, work offline. At end of
    day: **Export my changes** → encrypted `lastname-YYYYMMDD.hrischanges`.
-3. **Evening** — coordinator merges everyone's deltas into a new truth:
+3. **Evening** — a coordinator merges everyone's deltas into a new truth
+   **inside the same app — no install, no admin rights, no Node.** Open the
+   truth → **Data & Security → Merge operator changes** → select the
+   `.hrischanges` files → **Export merged truth**. cr-sqlite converges divergent
+   edits deterministically (order-independent).
 
-   ```bash
-   node scripts/merge-hris.mjs \
-     --truth   truth-YYYYMMDD.hrisdump \
-     --changes alice.hrischanges bob.hrischanges \
-     --password <org-passphrase> \
-     --out     truth-YYYYMMDD-merged.hrisdump
-   ```
+   > The product is just the built `index.html`; everything — editing *and*
+   > merging — happens in that one file.
 
-   cr-sqlite converges divergent edits deterministically (order-independent) and
-   the tool prints a per-operator audit report.
+   *Optional:* if you happen to have Node, `scripts/merge-hris.mjs` does the same
+   merge from the command line and powers the automated convergence test
+   (`npm run test:merge`). It is **not** required to operate the product.
 
 ## Usage
 

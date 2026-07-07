@@ -227,3 +227,8 @@ export function recentChanges(limit = 100): Promise<ChangeEventRow[]> {
     [limit],
   );
 }
+export function changesByOperator(): Promise<{ user_id: string; n: number }[]> {
+  return all<{ user_id: string; n: number }>(
+    "SELECT user_id, COUNT(*) AS n FROM change_event GROUP BY user_id ORDER BY n DESC",
+  );
+}
